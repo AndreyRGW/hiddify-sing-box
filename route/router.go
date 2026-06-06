@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"runtime"
+	"sync"
 
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/common/process"
@@ -32,6 +33,7 @@ type Router struct {
 	rules             []adapter.Rule
 	needFindProcess   bool
 	ruleSets          []adapter.RuleSet
+	ruleSetAccess     sync.RWMutex
 	ruleSetMap        map[string]adapter.RuleSet
 	processSearcher   process.Searcher
 	pauseManager      pause.Manager
@@ -75,7 +77,9 @@ func (r *Router) Initialize(rules []option.Rule, ruleSets []option.RuleSet) erro
 			return E.Cause(err, "parse rule-set[", i, "]")
 		}
 		r.ruleSets = append(r.ruleSets, ruleSet)
+		r.ruleSetAccess.Lock()
 		r.ruleSetMap[options.Tag] = ruleSet
+		r.ruleSetAccess.Unlock()
 	}
 	return nil
 }
@@ -190,6 +194,8 @@ func (r *Router) Close() error {
 }
 
 func (r *Router) RuleSet(tag string) (adapter.RuleSet, bool) {
+	r.ruleSetAccess.RLock()
+	defer r.ruleSetAccess.RUnlock()
 	ruleSet, loaded := r.ruleSetMap[tag]
 	return ruleSet, loaded
 }
