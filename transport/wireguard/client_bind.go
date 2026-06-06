@@ -28,6 +28,7 @@ type ClientBind struct {
 	bindDone            context.CancelFunc
 	dialer              N.Dialer
 	reservedForEndpoint map[netip.AddrPort][3]uint8
+	reservedAccess      sync.Mutex
 	connAccess          sync.Mutex
 	conn                *wireConn
 	done                chan struct{}
