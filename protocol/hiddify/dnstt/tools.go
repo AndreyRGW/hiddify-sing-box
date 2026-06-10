@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 
 	_ "embed"
 
@@ -16,16 +17,19 @@ var (
 	resolvers_bytes  []byte
 	countryResolvers map[string][]string
 	resolverCountry  map[string]string
+	loadOnce         sync.Once
 )
 
 func loadResolvers() {
-	json.Unmarshal(resolvers_bytes, &countryResolvers)
-	resolverCountry = make(map[string]string)
-	for country, resolvers := range countryResolvers {
-		for _, resolver := range resolvers {
-			resolverCountry[resolver] = country
+	loadOnce.Do(func() {
+		json.Unmarshal(resolvers_bytes, &countryResolvers)
+		resolverCountry = make(map[string]string)
+		for country, resolvers := range countryResolvers {
+			for _, resolver := range resolvers {
+				resolverCountry[resolver] = country
+			}
 		}
-	}
+	})
 }
 
 type ResolverS struct {
